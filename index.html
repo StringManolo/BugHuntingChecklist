@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Bounty Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #131920;
+            --bg-tertiary: #1a2028;
+            --accent: #00d9ff;
+            --accent-dim: #0088a3;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border: #30363d;
+            --success: #3fb950;
+            --danger: #f85149;
+            --warning: #d29922;
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        button {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-dim);
+        }
+
+        button.primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        button.primary:hover {
+            background: var(--accent-dim);
+            border-color: var(--accent-dim);
+        }
+
+        button.danger {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        button.danger:hover {
+            background: rgba(248, 81, 73, 0.1);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .sidebar h2 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .project-list {
+            list-style: none;
+        }
+
+        .project-item {
+            padding: 0.625rem 0.75rem;
+            margin-bottom: 0.25rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        .project-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .project-item.active {
+            background: var(--bg-tertiary);
+            border-left: 2px solid var(--accent);
+            padding-left: 0.625rem;
+        }
+
+        .project-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .delete-project {
+            opacity: 0;
+            background: none;
+            border: none;
+            color: var(--danger);
+            padding: 0.25rem;
+            margin: 0;
+            font-size: 0.75rem;
+        }
+
+        .project-item:hover .delete-project {
+            opacity: 1;
+        }
+
+        .add-project-form {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .add-project-form input {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .add-project-form input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .content {
+            background: var(--bg-secondary);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            padding: 2rem;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .content-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .domain-selector {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .domain-selector select {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.875rem;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .domain-selector select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .domain-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .domain-actions input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.875rem;
+        }
+
+        .domain-actions input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .vulnerability-categories {
+            margin-top: 2rem;
+        }
+
+        .category {
+            margin-bottom: 2rem;
+        }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .category-header h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .category-toggle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .category-stats {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+
+        .vulnerability-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .vulnerability-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.625rem 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .vulnerability-item:hover {
+            border-color: var(--accent-dim);
+            background: var(--bg-primary);
+        }
+
+        .vulnerability-item.checked {
+            border-color: var(--success);
+            background: rgba(63, 185, 80, 0.05);
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .vulnerability-item.checked .checkbox {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .checkbox::after {
+            content: '✓';
+            color: var(--bg-primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            opacity: 0;
+        }
+
+        .vulnerability-item.checked .checkbox::after {
+            opacity: 1;
+        }
+
+        .vulnerability-name {
+            flex: 1;
+        }
+
+        .custom-vuln-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .custom-vuln-actions input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-size: 0.875rem;
+        }
+
+        .custom-vuln-actions input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 20, 0.9);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .modal-body textarea {
+            width: 100%;
+            min-height: 300px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            resize: vertical;
+        }
+
+        .modal-body textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                top: 0;
+            }
+
+            .vulnerability-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s ease;
+        }
+
+        .delete-vuln-btn {
+            opacity: 0;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        .vulnerability-item:hover .delete-vuln-btn {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>/ Bug Bounty Tracker</h1>
+            <div class="header-actions">
+                <button onclick="showImportModal()">Import</button>
+                <button onclick="exportData()">Export</button>
+            </div>
+        </header>
+
+        <div class="main-grid">
+            <aside class="sidebar">
+                <h2>Projects</h2>
+                <ul class="project-list" id="projectList"></ul>
+                <div class="add-project-form">
+                    <input type="text" id="newProjectInput" placeholder="New project name..." onkeypress="handleProjectKeypress(event)">
+                    <button class="primary" onclick="addProject()" style="width: 100%; margin-top: 0.5rem;">Add Project</button>
+                </div>
+            </aside>
+
+            <main class="content">
+                <div id="emptyState" class="empty-state">
+                    <h3>No project selected</h3>
+                    <p>Create or select a project to start tracking vulnerabilities</p>
+                </div>
+
+                <div id="projectContent" style="display: none;">
+                    <div class="content-header">
+                        <h2 class="content-title" id="projectTitle">Project</h2>
+                        <div class="domain-selector">
+                            <select id="domainSelect" onchange="selectDomain()">
+                                <option value="">All Domains</option>
+                            </select>
+                            <button onclick="toggleDomainForm()">+ Domain</button>
+                        </div>
+                    </div>
+
+                    <div class="domain-actions" id="domainForm" style="display: none;">
+                        <input type="text" id="newDomainInput" placeholder="example.com" onkeypress="handleDomainKeypress(event)">
+                        <button class="primary" onclick="addDomain()">Add</button>
+                        <button onclick="toggleDomainForm()">Cancel</button>
+                        <button class="danger" onclick="deleteDomain()" id="deleteDomainBtn" style="display: none;">Delete Domain</button>
+                    </div>
+
+                    <div class="vulnerability-categories" id="vulnerabilityCategories"></div>
+
+                    <div class="custom-vuln-actions">
+                        <input type="text" id="newVulnInput" placeholder="Add custom vulnerability..." onkeypress="handleVulnKeypress(event)">
+                        <button class="primary" onclick="addCustomVulnerability()">Add Vulnerability</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Import Modal -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Import Data</h2>
+                <button class="close-modal" onclick="closeImportModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="importTextarea" placeholder="Paste your exported JSON data here..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeImportModal()">Cancel</button>
+                <button class="primary" onclick="importData()">Import</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_VULNERABILITIES = {
+            "Authentication & Authorization": [
+                "Bypass",
+                "Insufficient Rate Limit",
+                "Password Spraying",
+                "Insufficient Session Expiration",
+                "Insufficient Session Isolation",
+                "Password Quality",
+                "Predictable Credentials",
+                "Magic Link Replay",
+                "Unsafe Distribution",
+                "Unsafe Storage",
+                "Unsafe Transmission",
+                "Username Enumeration",
+                "Username Quality"
+            ],
+            "Injection Attacks": [
+                "Command Injection",
+                "CSS Injection",
+                "CSTI (Client Side Template Injection)",
+                "Formula Injection",
+                "GRPC Injections",
+                "HTML Injection",
+                "LFI (Local File Inclusion)",
+                "Log Injection",
+                "NoSQLi (NoSQL Injection)",
+                "RFI (Remote File Inclusion)",
+                "SMTP Header Injection",
+                "SQLi (SQL Injection)",
+                "SSI Injection (Server Side Includes)",
+                "SSTI (Server Side Template Injection)",
+                "Template Injection",
+                "XPath Injection",
+                "XXE (XML External Entity)"
+            ],
+            "Cross-Site Attacks": [
+                "Clickjacking",
+                "CSRF (Cross Site Request Forgery)",
+                "Cross Site Referer Leak",
+                "Cross User Defacement",
+                "CSWSH (Cross Site WebSocket Hijacking)",
+                "XS-Leaks (Cross Site Leaks)",
+                "XSS (Cross Site Scripting)"
+            ],
+            "Denial of Service": [
+                "Flooding Attacks - Application Layer",
+                "Flooding Attacks - Protocol Based",
+                "Resource Exhaustion - API Based",
+                "Resource Exhaustion - Authentication Based",
+                "Resource Exhaustion - Backend Systems",
+                "Resource Exhaustion - Frontend Systems",
+                "Resource Exhaustion - Parser Based"
+            ],
+            "Cryptographic Flaws": [
+                "Errors Leaking Cryptographic Data",
+                "Fallback to Insecure Protocols",
+                "Hardcoded Keys/Primitives",
+                "Insecure Key Exchange",
+                "IV/Nonce Reuse",
+                "Key Reuse",
+                "Memory Leaks",
+                "Missing Authentication (No-AEAD)",
+                "Missing HSTS",
+                "PRNGs",
+                "Padding Oracle",
+                "Timing Attacks",
+                "Weak Encryption Choices"
+            ],
+            "LLM Specific Vulnerabilities": [
+                "Prompt Injection",
+                "Model Attacks",
+                "Data Leakage",
+                "Output Manipulation"
+            ],
+            "Logic & Configuration": [
+                "Logic Flaws",
+                "Misconfiguration",
+                "Information Leakage"
+            ],
+            "Network & Protocol": [
+                "Buffer Overflow",
+                "Cache Poisoning",
+                "Cookie Tossing",
+                "CRLF",
+                "DNS Cache Poisoning",
+                "HTTP Attacks"
+            ],
+            "Access Control": [
+                "Directory Listing",
+                "IDOR (Indirect Object Reference)",
+                "Open Redirect",
+                "Path Traversal",
+                "Private Data Disclosure",
+                "Privilege Bypass",
+                "Privilege Escalation"
+            ],
+            "Other Vulnerabilities": [
+                "CVEs",
+                "Dangling Markup",
+                "Dependency Confusion",
+                "DOM Clobbering",
+                "Host Header Injection",
+                "HPP (HTTP Parameter Pollution)",
+                "Insecure Deserialization",
+                "Race Condition",
+                "RCE (Remote Code Execution)",
+                "RCI (Remote Code Inclusion)",
+                "Session Fixation",
+                "SSRF (Server Side Request Forgery)",
+                "Subdomain Takeover",
+                "Type Juggling",
+                "URL Parser Confusion",
+                "VHost Confusion",
+                "Web Cache Deception",
+                "XSW (XML Signature Wrapping)",
+                "Zone Transfer Attack"
+            ]
+        };
+
+        let state = {
+            projects: {},
+            currentProject: null,
+            currentDomain: null,
+            collapsedCategories: {}
+        };
+
+        function loadState() {
+            const saved = localStorage.getItem('bugBountyTracker');
+            if (saved) {
+                state = JSON.parse(saved);
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('bugBountyTracker', JSON.stringify(state));
+        }
+
+        function addProject() {
+            const input = document.getElementById('newProjectInput');
+            const name = input.value.trim();
+            if (!name) return;
+
+            if (state.projects[name]) {
+                alert('Project already exists');
+                return;
+            }
+
+            state.projects[name] = {
+                domains: {},
+                customVulnerabilities: []
+            };
+
+            input.value = '';
+            saveState();
+            renderProjects();
+            selectProject(name);
+        }
+
+        function handleProjectKeypress(event) {
+            if (event.key === 'Enter') {
+                addProject();
+            }
+        }
+
+        function deleteProject(projectName) {
+            if (!confirm(`Delete project "${projectName}"?`)) return;
+
+            delete state.projects[projectName];
+            if (state.currentProject === projectName) {
+                state.currentProject = null;
+                state.currentDomain = null;
+            }
+
+            saveState();
+            renderProjects();
+            renderContent();
+        }
+
+        function selectProject(projectName) {
+            state.currentProject = projectName;
+            state.currentDomain = null;
+            renderProjects();
+            renderContent();
+        }
+
+        function addDomain() {
+            if (!state.currentProject) return;
+
+            const input = document.getElementById('newDomainInput');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const project = state.projects[state.currentProject];
+            if (project.domains[name]) {
+                alert('Domain already exists');
+                return;
+            }
+
+            project.domains[name] = {
+                checked: {}
+            };
+
+            input.value = '';
+            toggleDomainForm();
+            saveState();
+            renderDomainSelector();
+            selectDomain(name);
+        }
+
+        function handleDomainKeypress(event) {
+            if (event.key === 'Enter') {
+                addDomain();
+            }
+        }
+
+        function deleteDomain() {
+            if (!state.currentProject || !state.currentDomain) return;
+
+            if (!confirm(`Delete domain "${state.currentDomain}"?`)) return;
+
+            delete state.projects[state.currentProject].domains[state.currentDomain];
+            state.currentDomain = null;
+
+            saveState();
+            renderDomainSelector();
+            renderVulnerabilities();
+            toggleDomainForm();
+        }
+
+        function toggleDomainForm() {
+            const form = document.getElementById('domainForm');
+            const deleteBtn = document.getElementById('deleteDomainBtn');
+            
+            if (form.style.display === 'none') {
+                form.style.display = 'flex';
+                deleteBtn.style.display = state.currentDomain ? 'block' : 'none';
+                document.getElementById('newDomainInput').focus();
+            } else {
+                form.style.display = 'none';
+                document.getElementById('newDomainInput').value = '';
+            }
+        }
+
+        function selectDomain(domainName = null) {
+            const select = document.getElementById('domainSelect');
+            state.currentDomain = domainName || select.value || null;
+            renderVulnerabilities();
+        }
+
+        function toggleVulnerability(category, vulnName) {
+            if (!state.currentProject) return;
+
+            const project = state.projects[state.currentProject];
+            const domain = state.currentDomain;
+
+            if (domain) {
+                const domainData = project.domains[domain];
+                const key = `${category}::${vulnName}`;
+                domainData.checked[key] = !domainData.checked[key];
+            } else {
+                Object.values(project.domains).forEach(domainData => {
+                    const key = `${category}::${vulnName}`;
+                    domainData.checked[key] = !domainData.checked[key];
+                });
+            }
+
+            saveState();
+            renderVulnerabilities();
+        }
+
+        function isVulnerabilityChecked(category, vulnName) {
+            if (!state.currentProject) return false;
+
+            const project = state.projects[state.currentProject];
+            const domain = state.currentDomain;
+            const key = `${category}::${vulnName}`;
+
+            if (domain) {
+                return project.domains[domain]?.checked[key] || false;
+            } else {
+                const domains = Object.values(project.domains);
+                if (domains.length === 0) return false;
+                return domains.every(d => d.checked[key]);
+            }
+        }
+
+        function addCustomVulnerability() {
+            if (!state.currentProject) return;
+
+            const input = document.getElementById('newVulnInput');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const project = state.projects[state.currentProject];
+            if (!project.customVulnerabilities.includes(name)) {
+                project.customVulnerabilities.push(name);
+            }
+
+            input.value = '';
+            saveState();
+            renderVulnerabilities();
+        }
+
+        function handleVulnKeypress(event) {
+            if (event.key === 'Enter') {
+                addCustomVulnerability();
+            }
+        }
+
+        function deleteCustomVulnerability(vulnName) {
+            if (!state.currentProject) return;
+
+            const project = state.projects[state.currentProject];
+            project.customVulnerabilities = project.customVulnerabilities.filter(v => v !== vulnName);
+
+            // Also remove from all domains' checked state
+            Object.values(project.domains).forEach(domain => {
+                const key = `Custom::${vulnName}`;
+                delete domain.checked[key];
+            });
+
+            saveState();
+            renderVulnerabilities();
+        }
+
+        function toggleCategory(category) {
+            state.collapsedCategories[category] = !state.collapsedCategories[category];
+            renderVulnerabilities();
+        }
+
+        function getCategoryStats(category, vulnerabilities) {
+            const checked = vulnerabilities.filter(v => isVulnerabilityChecked(category, v)).length;
+            const total = vulnerabilities.length;
+            return { checked, total, percentage: total > 0 ? (checked / total * 100) : 0 };
+        }
+
+        function renderProjects() {
+            const list = document.getElementById('projectList');
+            list.innerHTML = '';
+
+            Object.keys(state.projects).forEach(projectName => {
+                const li = document.createElement('li');
+                li.className = 'project-item' + (state.currentProject === projectName ? ' active' : '');
+                li.innerHTML = `
+                    <span class="project-name" onclick="selectProject('${projectName}')">${projectName}</span>
+                    <button class="delete-project" onclick="event.stopPropagation(); deleteProject('${projectName}')">×</button>
+                `;
+                list.appendChild(li);
+            });
+        }
+
+        function renderDomainSelector() {
+            const select = document.getElementById('domainSelect');
+            select.innerHTML = '<option value="">All Domains</option>';
+
+            if (state.currentProject) {
+                const project = state.projects[state.currentProject];
+                Object.keys(project.domains).forEach(domainName => {
+                    const option = document.createElement('option');
+                    option.value = domainName;
+                    option.textContent = domainName;
+                    option.selected = state.currentDomain === domainName;
+                    select.appendChild(option);
+                });
+            }
+        }
+
+        function renderVulnerabilities() {
+            const container = document.getElementById('vulnerabilityCategories');
+            container.innerHTML = '';
+
+            if (!state.currentProject) return;
+
+            const project = state.projects[state.currentProject];
+            const allVulns = { ...DEFAULT_VULNERABILITIES };
+
+            if (project.customVulnerabilities.length > 0) {
+                allVulns['Custom'] = project.customVulnerabilities;
+            }
+
+            Object.entries(allVulns).forEach(([category, vulnerabilities]) => {
+                const stats = getCategoryStats(category, vulnerabilities);
+                const isCollapsed = state.collapsedCategories[category];
+
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'category';
+
+                categoryDiv.innerHTML = `
+                    <div class="category-header" onclick="toggleCategory('${category}')">
+                        <span class="category-toggle">${isCollapsed ? '▶' : '▼'}</span>
+                        <h3>${category}</h3>
+                        <span class="category-stats">${stats.checked}/${stats.total}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${stats.percentage}%"></div>
+                    </div>
+                `;
+
+                if (!isCollapsed) {
+                    const vulnList = document.createElement('div');
+                    vulnList.className = 'vulnerability-list';
+                    vulnList.style.marginTop = '0.75rem';
+
+                    vulnerabilities.forEach(vuln => {
+                        const isChecked = isVulnerabilityChecked(category, vuln);
+                        const vulnDiv = document.createElement('div');
+                        vulnDiv.className = 'vulnerability-item' + (isChecked ? ' checked' : '');
+                        
+                        const deleteBtn = category === 'Custom' 
+                            ? `<button class="danger delete-vuln-btn" onclick="event.stopPropagation(); deleteCustomVulnerability('${vuln}')">×</button>`
+                            : '';
+
+                        vulnDiv.innerHTML = `
+                            <div class="checkbox"></div>
+                            <span class="vulnerability-name">${vuln}</span>
+                            ${deleteBtn}
+                        `;
+                        vulnDiv.onclick = (e) => {
+                            if (!e.target.classList.contains('delete-vuln-btn')) {
+                                toggleVulnerability(category, vuln);
+                            }
+                        };
+
+                        vulnList.appendChild(vulnDiv);
+                    });
+
+                    categoryDiv.appendChild(vulnList);
+                }
+
+                container.appendChild(categoryDiv);
+            });
+        }
+
+        function renderContent() {
+            const emptyState = document.getElementById('emptyState');
+            const projectContent = document.getElementById('projectContent');
+            const projectTitle = document.getElementById('projectTitle');
+
+            if (state.currentProject) {
+                emptyState.style.display = 'none';
+                projectContent.style.display = 'block';
+                projectTitle.textContent = state.currentProject;
+                renderDomainSelector();
+                renderVulnerabilities();
+            } else {
+                emptyState.style.display = 'block';
+                projectContent.style.display = 'none';
+            }
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(state, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `bug-bounty-tracker-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function showImportModal() {
+            document.getElementById('importModal').classList.add('active');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('active');
+            document.getElementById('importTextarea').value = '';
+        }
+
+        function importData() {
+            const textarea = document.getElementById('importTextarea');
+            try {
+                const imported = JSON.parse(textarea.value);
+                
+                if (!imported.projects || typeof imported.projects !== 'object') {
+                    throw new Error('Invalid data format');
+                }
+
+                if (confirm('This will replace all current data. Continue?')) {
+                    state = imported;
+                    saveState();
+                    closeImportModal();
+                    renderProjects();
+                    renderContent();
+                }
+            } catch (error) {
+                alert('Error importing data: ' + error.message);
+            }
+        }
+
+        // Initialize
+        loadState();
+        renderProjects();
+        renderContent();
+    </script>
+</body>
+</html>
